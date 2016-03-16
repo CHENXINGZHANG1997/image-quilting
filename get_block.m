@@ -20,7 +20,7 @@ if length(hcut) > bsize
   hcut = hcut(1:end-1);
 end
 
-block = im(vcut, hcut, :);
+block = im(hcut, vcut, :);
 
 end
 
