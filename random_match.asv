@@ -4,7 +4,30 @@ function [ match ] = random_match( comp, im, bsize, ovsize, k )
 [height, width, ~] = size(im);   
 matches = [];
 
-% 
+
+cols = floor(width / bsize);
+rows = floor(height / bsize);
+for c = 1 : cols
+  for r = 1 : rows
+    block = get_block(im, bsize, r, c);
+    
+    % Get the overlap region
+    comp_ov = comp(:, (bsize - ovsize + 1):bsize, :); % Left image's overlap
+    block_ov = block(:, 1:ovsize, :);                         % Right image's overlap
+    
+    ssd = sum((comp_ov(:) - block_ov(:)).^2);
+    matches = [matches [r; c; ssd]]; % appending the match
+  end
+end
+
+% Sort the possible matches by the errors
+matches = sortrows(matches', 3)';
+
+% Choose random match from the top k matches
+match_ = matches(:, randi(k));
+match = get_block(im, bsize, floor(y/bsize), floor(x/bsize));
+
+
 x = 1;
 while x <= width - bsize
   y = 1;
@@ -14,19 +37,18 @@ while x <= width - bsize
     x_cut = x_cut(1:end-1);
   end
   
-  while y <= height - bsize
-    
+  while y <= height - bsize    
     y_cut = y:y+bsize;
-    if length(y_cut ) > bsize
+    if length(y_cut) > bsize
       y_cut = y_cut(1:end-1);
     end
     
     b = im(y_cut, x_cut, :);
-%     imshow(b);
     
-    comp_ov = comp(:, bsize - ovsize:bsize, :);
-    b_ov = b(:, 1:ovsize+1, :);
-    figure;imshowimshow(comp_ov);
+    % Get the overlap region
+    comp_ov = comp(:, (bsize - ovsize + 1):bsize, :); % Left image's overlap
+    b_ov = b(:, 1:ovsize, :);                         % Right image's overlap
+    
     ssd = sum((comp_ov(:) - b_ov(:)).^2);
     matches = [matches [y; x; ssd]];
     y = y + bsize;
@@ -36,21 +58,27 @@ end
 
 matches = sortrows(matches', 3)';
 matches = matches(:, 1:k);
-match_indices = matches(:, length(matches))
-y = match_indices(1, :);
-x = match_indices(2, :);
+match_indices = matches(:, randi(length(matches)));
+% y
+% % x
+y = match_indices(1)
+x = match_indices(2)
+match = get_block(im, bsize, floor(y/bsize), floor(x/bsize));
 
-x_cut = x:x+bsize;
-if length(x_cut) > bsize
-  x_cut = x_cut(1:end-1);
-end
+size(match)
 
-y_cut = y:y+bsize;
-if length(y_cut) > bsize
-  y_cut = y_cut(1:end-1);
-end
-
-match = im(y_cut, x_cut, :);
+% 
+% x_cut = x:x+bsize;
+% if length(x_cut) > bsize
+%   x_cut = x_cut(1:end-1);
+% end
+% 
+% y_cut = y:y+bsize;
+% if length(y_cut) > bsize
+%   y_cut = y_cut(1:end-1);
+% end
+% 
+% match = im(y_cut, x_cut, :);
 
 end
 
