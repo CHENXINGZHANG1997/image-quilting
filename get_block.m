@@ -27,6 +27,11 @@ if length(row_cut) > bsize
   row_cut = row_cut(1:end-1);
 end
 
+
+% % size(im)
+row_cut(end)
+col_cut(end)
+
 block = im(row_cut, col_cut, :);
 
 end
