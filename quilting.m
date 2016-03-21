@@ -77,11 +77,11 @@ for row = 2:floor((out_h/bsize))
     end
         
     % Left and above blocks to compare to
-    block_left = get_block(out, bsize - ovsize, row, col-1);
-    block_above = get_block(out, bsize - ovsize, row-1, col);
+    block_left = get_block2(out, bsize, ovsize, row, col-1);
+    block_above = get_block2(out, bsize, ovsize, row-1, col);
     
 %     subplot(1,2,1);    
-    imshow(uint8(block_left));
+%     imshow(uint8(block_left));
 %     subplot(1,2,2);
 %     imshow(uint8(block_above));
 
