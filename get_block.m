@@ -29,8 +29,9 @@ end
 
 
 % % size(im)
-row_cut(end)
-col_cut(end)
+% row
+% row_cut(end)
+% col_cut(end)
 
 block = im(row_cut, col_cut, :);
 
