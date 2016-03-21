@@ -10,20 +10,26 @@ for c = 1 : cols
   for r = 1 : rows
     block = get_block(im, bsize, r, c);
     
-    % Get the overlap region
-%     bsize
     [h, w, ~] = size(comp_left);
-%     ovsize
-%     (bsize - ovsize + 1)
-    comp_ov_vert = comp_left(1:(w-ovsize), (w - ovsize + 1):w, :); % Left image's overlap
-    block_ov_vert = block(1:(w-ovsize), 1:ovsize, :);                      % Right image's overlap
     
-    comp_ov_hori = comp_above((h - ovsize + 1):h, 1:(h-ovsize), :); % Top image's overlap
-    block_ov_hori = block(1:ovsize, 1:(h-ovsize), :);                       % Bottom image's overlap
+    % Get the overlap region
+    comp_ov_vert = comp_left(1:(h-ovsize), (w - ovsize + 1):w, :); % Left image's overlap
+    block_ov_vert = block(1:(h-ovsize), 1:ovsize, :);                      % Right image's overlap
+    
+    comp_ov_hori = comp_above((h - ovsize + 1):h, 1:(w-ovsize), :); % Top image's overlap
+    block_ov_hori = block(1:ovsize, 1:(w-ovsize), :);                       % Bottom image's overlap
+    
+%     imshow(uint8(comp_left));
+    
+%     size(comp_ov_hori)
+%     size(block_ov_hori)
     
     % Calculate the error with sum of square differences
     ssd = sum((comp_ov_hori(:) - block_ov_hori(:)).^2);
     ssd = ssd + sum((comp_ov_vert(:) - block_ov_vert(:)).^2);
+    
+%     s = ssd(comp_ov_vert, block_ov_vert);
+%     s = s + ssd(comp_ov_hori, block_ov_hori);
     
     matches = [matches [r; c; ssd]];
   end
@@ -47,7 +53,7 @@ for i = 1 : w
 end
 
 % Choose random match from the top k matches
-match_index = matches(:, randi(k));
+match_index = matches(:, 1); %matches(:, randi(k));
 match = get_block(im, bsize, match_index(1), match_index(2));
 
 end

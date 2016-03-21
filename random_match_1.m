@@ -10,6 +10,9 @@ for c = 1 : cols
   for r = 1 : rows
     block = get_block(im, bsize, r, c);
     
+    comp_ov = 0;
+    block_ov = 0;
+    
     % Get the overlap region
     if strcmp(check, 'vert')
       comp_ov = comp(:, (bsize - ovsize + 1):bsize, :); % Left image's overlap
@@ -19,8 +22,8 @@ for c = 1 : cols
       block_ov = block(1:ovsize, :, :);                 % Bottom image's overlap
     end
     
-    ssd = sum((comp_ov(:) - block_ov(:)).^2);
-    matches = [matches [r; c; ssd]]; % Append the match
+    error = sum((comp_ov(:) - block_ov(:)).^2);
+    matches = [matches [r; c; error]]; % Append the match
   end
 end
 
@@ -46,4 +49,3 @@ match_index = matches(:, randi(k));
 match = get_block(im, bsize, match_index(1), match_index(2));
 
 end
-

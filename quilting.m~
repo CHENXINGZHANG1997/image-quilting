@@ -1,5 +1,5 @@
 % Parameters
-bsize = 20;              % Set by user
+bsize = 15;              % Set by user
 ovsize = floor(bsize/6); % Efros and Freeman
 tolerance = 0.1;         % Tolerance level
 
@@ -10,8 +10,8 @@ im = double(imread('images/yogurt.jpg'));
 mri = floor(im_h/bsize); % maximum row index
 mci = floor(im_w/bsize); % maximum col index
 
-% out = double(zeros(im_w*2, im_h*2, 3));
-out = double(zeros(300, 300, 3));
+out = double(zeros(im_w*2, im_h*2, 3));
+% out = double(zeros(300, 300, 3));
 [out_h, out_w, ~] = size(out);
 
 % Set the first block at random for the block comparison
@@ -58,9 +58,6 @@ for row = 2:floor((out_h/bsize))    % +1 fills in half block gap at end
 %   imshow(uint8(prev_block));
 end
 
-
-
-
 % Fill in the rest of the output image
 for row = 2:floor((out_h/bsize))
   for col = 2:floor((out_w/bsize))
@@ -81,7 +78,7 @@ for row = 2:floor((out_h/bsize))
     block_above = get_block(out, bsize - ovsize, row-1, col);
     
 %     subplot(1,2,1);    
-    imshow(uint8(block_left));
+%     imshow(uint8(block_left));
 %     subplot(1,2,2);
 %     imshow(uint8(block_above));
 
