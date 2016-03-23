@@ -1,96 +1,142 @@
 % Parameters
-bsize = 20;              % Set by user
-ovsize = floor(bsize/6); % Efros and Freeman
-tolerance = 0.1;         % Tolerance level
+
+% btile
+% bsize = 16;
+% num_blocks_out = 10;
+% ovsize = floor(bsize/6);
+% tolerance = 0.1;
+
+% caustics
+% bsize = 25;
+% num_blocks_out = 12;
+% ovsize = floor(bsize/6);
+% tolerance = 0.1;
+
+% farm-aerial
+% bsize = 20;
+% num_blocks_out = 14;
+% ovsize = floor(bsize/6);
+% tolerance = 0.03;
+
+% % leaf-crop
+% bsize = 20;
+% num_blocks_out = 14;
+% ovsize = floor(bsize/6);
+% tolerance = 0.03;
+
+% % text3
+% bsize = 20;
+% num_blocks_out = 14;
+% ovsize = floor(bsize/6);
+% tolerance = 0.1;
+
+% % starfield-crop
+% bsize = 20;
+% num_blocks_out = 14;
+% ovsize = floor(bsize/6);
+% tolerance = 0.1;
+
+% % japanese-wallpaper
+% bsize = 20;
+% num_blocks_out = 14;
+% ovsize = floor(bsize/6);
+% tolerance = 0.1;
+
+% floor
+bsize = 35;
+num_blocks_out = 10;
+ovsize = floor(bsize/6);
+tolerance = 0.3;
 
 % Open image
-im = double(imread('images/yogurt.jpg'));
+im = double(imread('images/floor.jpg'));
 [im_h, im_w, ~] = size(im);
 
-mri = floor(im_h/bsize); % maximum row index
-mci = floor(im_w/bsize); % maximum col index
-
-% out = double(zeros(im_w*2, im_h*2, 3));
-out = double(zeros(300, 300, 3));
+out_size = num_blocks_out * (bsize - ovsize - 1);
+out = double(zeros(out_size, out_size, 3));
 [out_h, out_w, ~] = size(out);
 
-% Set the first block at random for the block comparison
-first_block = get_block(im, bsize, randi(mri), randi(mci));
-prev_block = first_block;
-out(1:bsize, 1:(bsize), :) = prev_block;
-
-% Fill in first row
-for col = 2:floor((out_w/bsize))    % +1 fills in half block gap at end
-%   col_cut = max(1, (col-1)*bsize):col*bsize;
-  col_cut = max(1, (col-1)*(bsize) - ovsize + 1):(col*bsize - ovsize);
-  
-  if length(col_cut) > bsize
-    col_cut = col_cut(1:end-1);
-  end
-  
-  % Totally random selection
-  % out(1:bsize, col_cut, :) = get_block(im, bsize, randi(mri), randi(mci));
-  
-  % Random selection from best matches
-  prev_block = random_match_1(prev_block, im, bsize, ovsize, tolerance, 'vert');
-  out(1:(bsize-ovsize), col_cut, :) = prev_block(1:(bsize-ovsize), :, :);
-  
-%   imshow(uint8(prev_block));
-end
-
-% Fill in first column
-prev_block = first_block;
-for row = 2:floor((out_h/bsize))    % +1 fills in half block gap at end
-%   row_cut = max(1, (row-1)*bsize):row*bsize;
-  row_cut = max(1, (row-1)*(bsize) - ovsize + 1):(row*bsize - ovsize);
-  
-  if length(row_cut) > bsize
-    row_cut = row_cut(1:end-1);
-  end
-  
-  % Totally random selection
-  % out(row_cut, 1:bsize, :) = get_block(im, bsize, randi(mri), randi(mci));
-  
-  % Random selection from best matches
-  prev_block = random_match_1(prev_block, im, bsize, ovsize, tolerance, 'hori');
-  out(row_cut, 1:(bsize-ovsize), :) = prev_block(:, 1:(bsize-ovsize), :);
-  
-%   imshow(uint8(prev_block));
-end
-
-
-
-
-% Fill in the rest of the output image
-for row = 2:floor((out_h/bsize))
-  for col = 2:floor((out_w/bsize))
-    % Indexes in output image to write to
-    row_cut = max(1, (row-1)*(bsize) - ovsize + 1):(row*bsize - ovsize);
-    col_cut = max(1, (col-1)*(bsize) - ovsize + 1):(col*bsize - ovsize);
+for i = 1:num_blocks_out - 1    % loops over rows
+  for j = 1:num_blocks_out - 1  % loops over cols
     
-    if length(row_cut) > bsize
-      row_cut = row_cut(1:end-1);
+    % If i == 1 then we're at the top row, so check error above
+    %    j == 1           ""     left col, so check error left
+    %
+    % If we're in the case where i, j >= 2
+    %   then si:ei will get the the strip above the block we're considering
+    %   and  sj:ej will get the strip to the left of the block
+    si = (i-1)*bsize - (i-1)*ovsize + 1;
+    ei = si + bsize - 1;
+    sj = (j-1)*bsize - (j-1)*ovsize + 1;
+    ej = sj + bsize - 1;
+    
+    % Error for each potential match
+    errors = zeros(im_h - bsize, im_w - bsize);
+    
+    if i == 1 && j == 1
+      % Very first case, so pick one at random
+      row_idx = randi(im_h - bsize);
+      col_idx = randi(im_w - bsize);
+      
+      out(si:ei, sj:ej, :) = im(row_idx :row_idx  + bsize - 1, ...
+        col_idx:col_idx + bsize - 1, :);
+      continue;
+    elseif i == 1
+      % Top row, so only check left edges
+      out_slice = out(si:ei, sj:sj + ovsize - 1, :);
+      errors = calc_errors(im, out_slice, 'left', bsize, ovsize);
+      
+    elseif j == 1
+      % Left col, so only check above
+      out_slice = out(si:si + ovsize - 1, sj:ej, :);
+      errors = calc_errors(im, out_slice, 'above', bsize, ovsize);
+    else
+      % Typical case, check above and left
+      out_slice = out(si:ei, sj:sj + ovsize - 1, :);
+      errors = calc_errors(im, out_slice, 'left', bsize, ovsize);
+      
+      out_slice = out(si:si + ovsize - 1, sj:ej, :);
+      errors = errors + calc_errors(im, out_slice, 'above', bsize, ovsize);
+      
+      % Remove the overlapping region in above and left cases
+      out_slice = out(si:si + ovsize - 1, sj:sj + ovsize - 1, :);
+      errors = errors - calc_errors(im, out_slice, 'corner', bsize, ovsize);
     end
     
-    if length(col_cut) > bsize
-      col_cut = col_cut(1:end-1);
-    end
-        
-    % Left and above blocks to compare to
-    block_left = get_block2(out, bsize, ovsize, row, col-1);
-    block_above = get_block2(out, bsize, ovsize, row-1, col);
+    % Find the match and its indicies
+    matches = find(errors(:) <= (1 + tolerance)*min(errors(:)));
+    match_index = matches(randi(length(matches)));
+    [im_r, im_c] = ind2sub(size(errors), match_index);
     
-%     subplot(1,2,1);    
-%     imshow(uint8(block_left));
-%     subplot(1,2,2);
-%     imshow(uint8(block_above));
-
+    % No cut version:
+    out(si:ei, sj:ej, :) = im(im_r:im_r + bsize - 1, im_c:im_c + bsize - 1, :);
     
-    % Random selection from k best matches
-    temp = random_match_2(block_left, block_above, im, bsize, ovsize, tolerance);
-    out(row_cut, col_cut, :) = temp;
-%     out(row_cut, col_cut, :) = random_match_1(block_left, block_above, im, bsize, ovsize, tolerance);
+    % Boundary divides the sides of the min cut with 1s and 0s
+%     boundary = ones(bsize, bsize);
+%     
+%     % Find the min cut
+%     if i ~= 1
+%       % Above overlap
+%       im_overlap = im(im_r:im_r+ovsize - 1, im_c:im_c+bsize - 1, :);
+%       out_overlap = out(si:si+ovsize - 1, sj:ej, :);
+%       cut = dpcut(im_overlap, out_overlap, 'hori');
+%       boundary(1:ovsize, 1:bsize) = double(cut >= 0);
+%     end
+%     
+%     if j ~= 1
+%       % Left overlap
+%       im_overlap = im(im_r:im_r+bsize-1, im_c:im_c+ovsize-1, :);
+%       out_overlap = out(si:ei, sj:sj+ovsize-1, :);
+%       cut = dpcut(im_overlap, out_overlap, 'vert');
+%       boundary(1:bsize, 1:ovsize) = boundary(1:bsize, 1:ovsize) .* double(cut >= 0);
+%     end
+%     
+%     % Overlay the block onto the output image, cutting along the boundary
+%     boundary = repmat(boundary, 1, 1, 3);
+%     out(si:ei, sj:ej, :) = out(si:ei, sj:ej, :) .* (boundary == 0) + ...
+%         im(im_r:im_r+bsize-1, im_c:im_c+bsize-1, :) .* (boundary == 1);
   end
+  
 end
 
 imshow(uint8(out));
